@@ -1,4 +1,4 @@
-I only include non-virtual (phyiscal) servers in all lists. toggles by region, will turn off notifications while it connects to prevent notify spam, then turns it back on that the very end.
+I only include non-virtual (physically based) servers in all lists. toggles by region, will turn off notifications while it connects to prevent notify spam, then turns it back on that the very end.
 
 # Timeout
 CONNECTION_TIMEOUT=5 # * 0.5 seconds
