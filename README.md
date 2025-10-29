@@ -1,4 +1,4 @@
-I only include non-virtual (physically based) servers in all lists. Toggles by region, will turn off notifications while it connects to prevent notify spam, then turns notifications back on at the very end.
+I only include non-virtual (physically based) servers in all lists. Toggles by region, will turn off GNOME shell  notifications while it connects to prevent notify spam, then turns notifications back on at the very end.
 
 ## Timeout
 CONNECTION_TIMEOUT=5
