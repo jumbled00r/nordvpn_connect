@@ -1,0 +1,110 @@
+#!/bin/bash
+
+ASIAN_COUNTRIES=("Hong_Kong" "Indonesia" "Japan" "Malaysia" "Singapore" "South_Korea" "Turkey" "United_Arab_Emirates")
+EUROPEAN_COUNTRIES=("Albania" "Austria" "Belgium" "Bosnia_And_Herzegovina" "Bulgaria" "Croatia" "Cyprus" "Czech_Republic" "Denmark" "Estonia" "Finland" "France" "Germany" "Greece" "Hungary" "Iceland" "Ireland" "Italy" "Latvia" "Lithuania" "Luxembourg" "Moldova" "Netherlands" "North_Macedonia" "Norway" "Poland" "Portugal" "Romania" "Serbia" "Slovakia" "Slovenia" "Spain" "Sweden" "Switzerland" "Ukraine" "United_Kingdom")
+AFRICAN_COUNTRIES=("South_Africa")
+NORTH_AMERICAN_COUNTRIES=("Canada" "Mexico")
+SOUTH_AMERICAN_COUNTRIES=("Argentina" "Brazil" "Chile" "Colombia" "Peru")
+OCEANIA_COUNTRIES=("Australia" "New_Zealand")
+
+# Timeout
+CONNECTION_TIMEOUT=5 # * 0.5 seconds
+# Continent Toggle
+ASIA_DISABLE=1
+EUROPE_DISABLE=0
+AFRICAN_DISABLE=0
+NORTH_AMERICAN_DISABLE=0
+SOUTH_AMERICAN_DISABLE=0
+OCEANIA_DISABLE=1
+# Country Toggle
+USA_DISABLE=1
+
+check_root() {
+	if [[ $EUID -ne 0 ]]; then
+		exec sudo "$0" "$@"
+	fi
+	REAL_USER="$SUDO_USER"
+}
+
+get_cities() {
+	local COUNTRY="$1"
+	CITIES=($(nordvpn cities "$COUNTRY" 2>/dev/null | awk 'NF { for(i=1; i<=NF; i++) print $i }'))
+}
+
+randomize_countries() {
+	SERVER_COUNTRIES=()
+	[[ $ASIA_DISABLE = 0 ]] && SERVER_COUNTRIES+=("${ASIAN_COUNTRIES[@]}")
+	[[ $EUROPE_DISABLE = 0 ]] && SERVER_COUNTRIES+=("${EUROPEAN_COUNTRIES[@]}")
+	[[ $AFRICAN_DISABLE = 0 ]] && SERVER_COUNTRIES+=("${AFRICAN_COUNTRIES[@]}")
+	[[ $NORTH_AMERICAN_DISABLE = 0 ]] && SERVER_COUNTRIES+=("${NORTH_AMERICAN_COUNTRIES[@]}")
+	[[ $SOUTH_AMERICAN_DISABLE = 0 ]] && SERVER_COUNTRIES+=("${SOUTH_AMERICAN_COUNTRIES[@]}")
+	[[ $OCEANIA_DISABLE = 0 ]] && SERVER_COUNTRIES+=("${OCEANIA_COUNTRIES[@]}")
+	[[ $USA_DISABLE = 0 ]] && SERVER_COUNTRIES+=("United_States")
+
+	RANDOM_COUNTRIES=()
+	while IFS= read -r COUNTRY; do
+		RANDOM_COUNTRIES+=("$COUNTRY")
+	done < <(printf '%s\n' "${SERVER_COUNTRIES[@]}" | shuf)
+}
+
+is_connected() {
+	nordvpn status | grep -q "Status: Connected"
+}
+
+connect() {
+	randomize_countries
+
+	for COUNTRY in "${RANDOM_COUNTRIES[@]}"; do
+		CITIES=()
+		get_cities "$COUNTRY"
+
+		if [ ${#CITIES[@]} -eq 0 ]; then
+			CITIES=("$COUNTRY")
+		fi
+
+		for SERVER in "${CITIES[@]}"; do
+			echo "Trying to connect to $SERVER..."
+			nordvpn connect "${SERVER}" &
+			PID=$!
+			
+			i=0
+			while true; do
+				sleep 0.5
+				((i += 1))
+				if ! kill -0 $PID 2> /dev/null; then
+					if is_connected; then
+						nordvpn status
+						exit 0
+					else
+						systemctl restart nordvpnd
+						break
+					fi
+				fi
+				if (( i == $CONNECTION_TIMEOUT )); then
+					kill -2 "$PID"
+					sleep 0.5
+					break
+				fi
+			done
+		done
+	done
+	echo "Exhausted all servers, retrying in random order..."
+}
+
+gset_notify() {
+	local USER_ID=$(id -u "$REAL_USER")
+	local DBUS_ADDRESS="unix:path=/run/user/$USER_ID/bus"
+	sudo -u "$REAL_USER" \
+		DISPLAY=:0 \
+		DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDRESS" \
+	 	gsettings set org.gnome.desktop.notifications show-banners "$1"
+}
+
+check_root
+
+gset_notify "false"
+trap "sleep 0.05 && gset_notify 'true' && exit 0" EXIT SIGINT SIGTERM
+
+while true; do
+	connect
+done
