@@ -3,7 +3,7 @@ I only include non-virtual (physically based) servers in all lists. Toggles by r
 ## Timeout
 CONNECTION_TIMEOUT=5
 
-(increments of 0.5 seconds)
+(increments of 0.5 second)
 ## Continent Toggle
 ASIA_DISABLE=1
 
