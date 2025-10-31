@@ -103,7 +103,7 @@ gset_notify() {
 check_root
 
 gset_notify "false"
-trap "sleep 0.05 && gset_notify 'true' && exit 0" EXIT SIGINT SIGTERM
+trap "sleep 0.1 && gset_notify 'true' && exit 0" EXIT SIGINT SIGTERM
 
 while true; do
 	connect
