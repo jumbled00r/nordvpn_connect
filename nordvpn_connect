@@ -24,6 +24,9 @@ check_root() {
 		exec sudo "$0" "$@"
 	fi
 	REAL_USER="$SUDO_USER"
+	USER_ID=$(id -u "$REAL_USER")
+	DBUS_ADDRESS="unix:path=/run/user/$USER_ID/bus"
+	REAL_XDG_RUNTIME_DIR="/run/user/$USER_ID"
 }
 
 get_cities() {
@@ -74,6 +77,12 @@ connect() {
 				if ! kill -0 $PID 2> /dev/null; then
 					if is_connected; then
 						nordvpn status
+						sudo -u "$REAL_USER" \
+							XDG_RUNTIME_DIR="$REAL_XDG_RUNTIME_DIR" \
+							DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDRESS" \
+							/usr/bin/canberra-gtk-play \
+							--id=network-connectivity-established \
+							&> /dev/null
 						exit 0
 					else
 						systemctl restart nordvpnd
@@ -91,9 +100,7 @@ connect() {
 	echo "Exhausted all servers, retrying in random order..."
 }
 
-gset_notify() {
-	local USER_ID=$(id -u "$REAL_USER")
-	local DBUS_ADDRESS="unix:path=/run/user/$USER_ID/bus"
+gset_notify() {	
 	sudo -u "$REAL_USER" \
 		DISPLAY=:0 \
 		DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDRESS" \
