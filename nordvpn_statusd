@@ -1,17 +1,5 @@
 #!/bin/bash
 
-SCROLL_LOCK_INPUTS=$(ls /sys/class/leds/ | grep scrolllock)
-for input in $SCROLL_LOCK_INPUTS; do
-	DEVICE_NAME=$(cat "/sys/class/leds/$input/device/name")
-	if [[ "$DEVICE_NAME" =~ [Kk]eyboard ]]; then
-		SCROLL_LOCK_PATH="/sys/class/leds/$input/brightness"
-		break
-	fi
-done
-
-[[ -z $SCROLL_LOCK_PATH ]] && exit 1
-CURRENT_STATUS=$(cat "$SCROLL_LOCK_PATH")
-
 #### Configuration Variables
 # DNS PING
 PING_PERIOD=8
@@ -25,8 +13,21 @@ DNS_SERVERS="1.1.1.1 8.8.8.8 9.9.9.9"
 STATUS_FLAG="/tmp/nordvpn_statusd_statusflag"
 END_FLAG="/tmp/nordvpn_statusd_endflag"
 
+find_scroll_lock() {
+	SCROLL_LOCK_INPUTS=$(ls /sys/class/leds/ | grep scrolllock)
+	for input in $SCROLL_LOCK_INPUTS; do
+		DEVICE_NAME=$(cat "/sys/class/leds/$input/device/name")
+		if [[ "$DEVICE_NAME" =~ [Kk]eyboard ]]; then
+			SCROLL_LOCK_PATH="/sys/class/leds/$input/brightness"
+			break
+		fi
+	done
+	[[ ! -f $SCROLL_LOCK_PATH ]] && exit 1
+	CURRENT_STATUS=$(cat "$SCROLL_LOCK_PATH")
+}
+
 preset_flags() {
-	echo 0 > "${STATUS_FLAG}" 
+	echo 1 > "${STATUS_FLAG}" 
 	echo 0 > "${END_FLAG}"
 }
 
@@ -94,14 +95,10 @@ exit_statusd() {
 	fi
 }
 
-if [ ! -f "$SCROLL_LOCK_PATH" ]; then
-	exit 1
-fi
-
+find_scroll_lock
 preset_flags
 trap exit_statusd EXIT
 if [[ $(check_nordlynx_iface) = 0 ]]; then
-	echo 1 > "${STATUS_FLAG}"
 	start_blinkd
 	while true; do
 		check_con
