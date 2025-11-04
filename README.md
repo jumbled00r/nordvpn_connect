@@ -20,3 +20,7 @@ OCEANIA_DISABLE=1
 ## Country Toggle
 USA_DISABLE=1
 
+# nordvpn_statusd
+Optional. If you move it to ``/opt/nordvpn_statusd`` nordvpn_connect will call it after successful connection. 
+It replaces your Scroll-Lock LED with a useful indication of VPN connection and status (blinks if nordlynx iface exists but doesn't have a valid connection) (solid if nordlynx is working).
+
