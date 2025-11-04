@@ -1,6 +1,6 @@
 # nordvpn_connect
 I only include non-virtual (physically based) servers in all lists. Toggles by region, will turn off GNOME shell  notifications while it connects to prevent notify spam, then turns notifications back on at the very end.
-Install ``chmod +x nordvpn_connect`` and move it to ``/usr/local/bin`` for easy use.
+Use ``chmod +x nordvpn_connect`` and move it to ``/usr/local/bin`` for easy use.
 
 # nordvpn_statusd
 Optional. If you move it to ``/opt/nordvpn_statusd`` nordvpn_connect will call it after successful connection. 
