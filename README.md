@@ -1,11 +1,13 @@
 # nordvpn_connect
 I only include non-virtual (physically based) servers in all lists. Toggles by region, will turn off GNOME shell  notifications while it connects to prevent notify spam, then turns notifications back on at the very end.
+## Install
 Use ``chmod +x nordvpn_connect`` and move it to ``/usr/local/bin`` for easy use.
 
 # nordvpn_statusd
-Optional. If you move it to ``/opt/nordvpn_statusd`` nordvpn_connect will call it after successful connection. 
+Optional. nordvpn_connect doesnt require this daemon.
 It replaces your Scroll-Lock LED with a useful indication of VPN connection and status (blinks if nordlynx iface exists but doesn't have a valid connection) (solid if nordlynx is working).
-
+## Install
+Use ``chmod +x nordvpn_statusd`` and move it to ``/opt``. If it exists in ``/opt/nordvpn_statusd``, nordvpn_connect will start it after a successful connection.
 
 ## Timeout
 CONNECTION_TIMEOUT=5
