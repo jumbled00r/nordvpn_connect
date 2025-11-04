@@ -1,0 +1,106 @@
+#!/bin/sh
+
+SCROLL_LOCK_INPUTS=$(ls /sys/class/leds/ | grep scrolllock)
+for input in $SCROLL_LOCK_INPUTS; do
+	DEVICE_NAME=$(cat "/sys/class/leds/$input/device/name")
+	if [[ "$DEVICE_NAME" =~ [Kk]eyboard ]]; then
+		SCROLL_LOCK_PATH="/sys/class/leds/$input/brightness"
+		break
+	fi
+done
+
+[[ -z $SCROLL_LOCK_PATH ]] && exit 1
+CURRENT_STATUS=$(cat "$SCROLL_LOCK_PATH")
+
+#### Configuration Variables
+PING_PERIOD=8
+TIMEOUT=0.5
+SLEEP_OFF=0.375
+SLEEP_ON=0.75
+####
+PING_PERIOD_POST=$(echo "$PING_PERIOD - 3 * $TIMEOUT" | bc )
+DNS_SERVERS="1.1.1.1 8.8.8.8 9.9.9.9"
+STATUS_FLAG="/tmp/nordvpn_statusd_statusflag"
+END_FLAG="/tmp/nordvpn_statusd_endflag"
+
+preset_flags() {
+	echo 0 > "${STATUS_FLAG}" 
+	echo 0 > "${END_FLAG}"
+}
+
+update_sl() {
+	sudo sh -c "echo $CURRENT_STATUS > $SCROLL_LOCK_PATH"
+}
+
+check_nordlynx_iface() {
+	ip a show dev nordlynx &> /dev/null
+	echo $?
+}
+
+blink() {
+	while [[ $(< "$STATUS_FLAG") == 1 ]]; do
+		CURRENT_STATUS=0
+		update_sl
+		sleep $SLEEP_OFF
+		CURRENT_STATUS=1
+		update_sl
+		sleep $SLEEP_ON
+	done
+	if [[ $(< "$END_FLAG") == 1 ]]; then
+		CURRENT_STATUS=0
+		update_sl
+	fi
+}
+
+sleep_check_iface() {
+	i=0
+	while (( $(echo "$i < $1 * 2" | bc) )); do
+		[[ $(check_nordlynx_iface) = 1 ]] && exit 1
+		sleep 0.5
+		i=$((i+1))
+	done
+}
+
+
+check_con() {
+	for dns in $DNS_SERVERS; do
+		if ping -c 1 -W $TIMEOUT $dns &> /dev/null; then
+			echo 0 > "${STATUS_FLAG}"
+			CURRENT_STATUS=1
+			update_sl
+			sleep_check_iface $PING_PERIOD
+			return
+		fi
+	done
+	echo 1 > "${STATUS_FLAG}"
+	if ! kill -0 "$BLINK_PID" 2>/dev/null; then
+		blink &
+		BLINK_PID=$!
+	fi
+	sleep_check_iface $PING_PERIOD_POST
+}
+
+exit_statusd() {
+	echo 1 > "${END_FLAG}" 
+	echo 0 > "${STATUS_FLAG}"
+	if ! kill -0 "$BLINK_PID" 2>/dev/null; then
+		CURRENT_STATUS=0
+		update_sl
+	fi
+}
+
+if [ ! -f "$SCROLL_LOCK_PATH" ]; then
+	exit 1
+fi
+
+preset_flags
+trap exit_statusd EXIT
+if [[ $(check_nordlynx_iface) = 0 ]]; then
+	echo 1 > "${STATUS_FLAG}"
+	blink &
+	BLINK_PID=$!
+	while true; do
+		check_con
+	done
+fi
+

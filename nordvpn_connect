@@ -76,13 +76,18 @@ connect() {
 				((i += 1))
 				if ! kill -0 $PID 2> /dev/null; then
 					if is_connected; then
-						nordvpn status
-						sudo -u "$REAL_USER" \
+						nohup sudo -u "$REAL_USER" \
 							XDG_RUNTIME_DIR="$REAL_XDG_RUNTIME_DIR" \
 							DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDRESS" \
 							/usr/bin/canberra-gtk-play \
 							--id=network-connectivity-established \
-							&> /dev/null
+							&> /dev/null &
+						if [[ -f /opt/nordvpn_statusd ]]; then
+							if ! pgrep -x nordvpn_statusd > /dev/null; then
+								/opt/nordvpn_statusd &
+							fi
+						fi
+						nordvpn status
 						exit 0
 					else
 						systemctl restart nordvpnd
