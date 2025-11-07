@@ -62,9 +62,10 @@ start_blinkd() {
 
 sleep_check_iface() {
 	i=0
-	while (( $(echo "$i < $1 * 2" | bc) )); do
+	while (( $(echo "$i < $1 * 4" | bc) )); do
 		[[ $(check_nordlynx_iface) = 1 ]] && exit 1
-		sleep 0.5
+		[[ -n $2 ]] && update_sl
+		sleep 0.25
 		i=$((i+1))
 	done
 }
@@ -74,8 +75,7 @@ check_con() {
 		if ping -c 1 -W $TIMEOUT $dns &> /dev/null; then
 			echo 0 > "${STATUS_FLAG}"
 			CURRENT_STATUS=1
-			update_sl
-			sleep_check_iface $PING_PERIOD
+			sleep_check_iface $PING_PERIOD 1
 			return
 		fi
 	done
