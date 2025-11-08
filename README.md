@@ -7,7 +7,7 @@ Use ``chmod +x nordvpn_connect`` and move it to ``/usr/local/bin`` for easy use.
 Optional. nordvpn_connect doesnt require this daemon.
 It replaces your Scroll-Lock LED with a useful indication of VPN connection and status (blinks if nordlynx iface exists but doesn't have a valid connection) (solid if nordlynx is working).
 
-KEYBOARD_DEVICE_NAME has to be set to the exact device name of your keyboard.
+``KEYBOARD_DEVICE_NAME`` has to be set to the exact device name of your keyboard.
 ## Install
 Use ``chmod +x nordvpn_statusd`` and move it to ``/opt``. If it exists in ``/opt/nordvpn_statusd``, nordvpn_connect will start it after a successful connection.
 
