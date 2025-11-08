@@ -1,6 +1,8 @@
 #!/bin/bash
 
 #### Configuration Variables
+# Set this to the keyboard you want to use
+KEYBOARD_DEVICE_NAME="Chicony USB Keyboard"
 # DNS PING
 PING_PERIOD=8
 TIMEOUT=0.5
@@ -17,7 +19,7 @@ find_scroll_lock() {
 	SCROLL_LOCK_INPUTS=$(ls /sys/class/leds/ | grep scrolllock)
 	for input in $SCROLL_LOCK_INPUTS; do
 		DEVICE_NAME=$(cat "/sys/class/leds/$input/device/name")
-		if [[ "$DEVICE_NAME" =~ [Kk]eyboard ]]; then
+		if [[ "$DEVICE_NAME" == "$KEYBOARD_DEVICE_NAME" ]]; then
 			SCROLL_LOCK_PATH="/sys/class/leds/$input/brightness"
 			break
 		fi
